@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pikmin ポイント管理</title>
+
   <style>
     * {
       box-sizing: border-box;
@@ -154,6 +155,7 @@
     }
 
     .progress-wrap {
+      position: relative;
       height: 28px;
       border-radius: 999px;
       background: rgba(0,0,0,0.08);
@@ -162,11 +164,24 @@
     }
 
     .progress-bar {
+      position: relative;
+      z-index: 2;
       height: 100%;
       width: 0%;
       border-radius: 999px;
       background: linear-gradient(90deg, #22c55e, #16a34a);
       transition: width 0.4s ease;
+    }
+
+    .ideal-marker {
+      position: absolute;
+      top: 0;
+      width: 4px;
+      height: 100%;
+      background: #ef4444;
+      z-index: 3;
+      border-radius: 999px;
+      transition: left 0.4s ease;
     }
 
     .progress-text {
@@ -228,6 +243,13 @@
       line-height: 1.3;
     }
 
+    .ideal-caption {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+
     @media (max-width: 480px) {
       body {
         padding: 14px;
@@ -256,8 +278,10 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
+
     <div class="hero">
       <h1>📊 Pikmin ポイント管理</h1>
       <p id="monthLabel"></p>
@@ -285,13 +309,19 @@
     </div>
 
     <div class="card">
+
       <div class="points">
         <div class="label">現在ポイント</div>
         <div class="value" id="currentPoints">0 pt</div>
       </div>
 
       <div class="progress-wrap">
+        <div class="ideal-marker" id="idealMarker"></div>
         <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="ideal-caption">
+        🔴 赤線 = 今日までの理想位置
       </div>
 
       <div class="progress-text" id="progressText">0%</div>
@@ -302,6 +332,7 @@
       </div>
 
       <div class="stats-grid">
+
         <div class="mini-card">
           <div class="mini-label">今日まで理想</div>
           <div class="mini-value" id="requiredByToday">0</div>
@@ -321,12 +352,14 @@
           <div class="mini-label">残り1日必要</div>
           <div class="mini-value" id="requiredPerDay">0</div>
         </div>
+
       </div>
 
       <div class="status-card">
         <div class="status-title">達成予測日</div>
         <div class="status-value" id="achievementDate">-</div>
       </div>
+
     </div>
   </div>
 
@@ -339,7 +372,8 @@
     const monthKey = `${year}-${month}`;
     const storageKey = 'pikmin_month_data';
 
-    document.getElementById('monthLabel').textContent = `${year}年${month}月`;
+    document.getElementById('monthLabel').textContent =
+      `${year}年${month}月`;
 
     function daysInMonth(year, month) {
       return new Date(year, month, 0).getDate();
@@ -354,28 +388,48 @@
         const data = JSON.parse(raw);
 
         if (data.month === monthKey) {
-          document.getElementById('monthlyTarget').value = data.target;
+          document.getElementById('monthlyTarget').value =
+            data.monthlyTarget || 12200;
+
+          document.getElementById('nextTarget').value =
+            data.nextTarget || '';
+
+          document.getElementById('remainingToTarget').value =
+            data.remainingToTarget || '';
         }
       } catch (e) {
         console.error(e);
       }
     }
 
-    function saveSettings(target) {
+    function saveSettings() {
       const data = {
         month: monthKey,
-        target: target
+        monthlyTarget:
+          document.getElementById('monthlyTarget').value,
+
+        nextTarget:
+          document.getElementById('nextTarget').value,
+
+        remainingToTarget:
+          document.getElementById('remainingToTarget').value
       };
 
       localStorage.setItem(storageKey, JSON.stringify(data));
     }
 
     function calculate() {
-      const monthlyTarget = parseInt(document.getElementById('monthlyTarget').value || 0);
-      const nextTarget = parseInt(document.getElementById('nextTarget').value || 0);
-      const remainingToTarget = parseInt(document.getElementById('remainingToTarget').value || 0);
 
-      saveSettings(monthlyTarget);
+      const monthlyTarget =
+        parseInt(document.getElementById('monthlyTarget').value || 0);
+
+      const nextTarget =
+        parseInt(document.getElementById('nextTarget').value || 0);
+
+      const remainingToTarget =
+        parseInt(document.getElementById('remainingToTarget').value || 0);
+
+      saveSettings();
 
       const currentPoints = nextTarget - remainingToTarget;
 
@@ -385,7 +439,8 @@
       const dailyTarget = monthlyTarget / totalDays;
       const requiredByToday = dailyTarget * day;
 
-      const neededToday = Math.max(0, requiredByToday - currentPoints);
+      const neededToday =
+        Math.max(0, requiredByToday - currentPoints);
 
       const averagePerDay = currentPoints / day;
       const predictedMonthTotal = averagePerDay * totalDays;
@@ -395,49 +450,79 @@
       let requiredPerDayRemaining = 0;
 
       if (remainingDays > 0) {
-        requiredPerDayRemaining = Math.max(0, remainingPoints / remainingDays);
+        requiredPerDayRemaining =
+          Math.max(0, remainingPoints / remainingDays);
       }
 
       let achievementDate = 'データ不足';
 
       if (currentPoints >= monthlyTarget) {
         achievementDate = '🎉 達成済み';
-      } else if (averagePerDay > 0) {
-        const daysToGoal = Math.ceil(remainingPoints / averagePerDay);
+      }
+      else if (averagePerDay > 0) {
+
+        const daysToGoal =
+          Math.ceil(remainingPoints / averagePerDay);
 
         const future = new Date(today);
+
         future.setDate(today.getDate() + daysToGoal);
 
-        achievementDate = `${future.getMonth() + 1}月${future.getDate()}日（あと${daysToGoal}日）`;
+        achievementDate =
+          `${future.getMonth() + 1}月${future.getDate()}日（あと${daysToGoal}日）`;
       }
 
-      const progress = Math.min(currentPoints / monthlyTarget, 1);
+      const progress =
+        Math.min(currentPoints / monthlyTarget, 1);
+
       const percent = (progress * 100).toFixed(1);
 
-      document.getElementById('currentPoints').textContent = `${currentPoints.toLocaleString()} pt`;
-      document.getElementById('progressBar').style.width = `${percent}%`;
-      document.getElementById('progressText').textContent = `${percent}%`;
+      document.getElementById('currentPoints').textContent =
+        `${currentPoints.toLocaleString()} pt`;
 
-      document.getElementById('requiredByToday').textContent = `${requiredByToday.toFixed(1)} pt`;
+      document.getElementById('progressBar').style.width =
+        `${percent}%`;
+
+      document.getElementById('progressText').textContent =
+        `${percent}%`;
+
+      document.getElementById('requiredByToday').textContent =
+        `${requiredByToday.toFixed(1)} pt`;
 
       const judge = document.getElementById('todayJudge');
 
       if (neededToday <= 0) {
         judge.textContent = '✅ 達成';
-        judge.className = 'value good';
+        judge.className = 'status-value good';
       } else {
-        judge.textContent = `⚠️ あと ${neededToday.toFixed(1)} pt`;
-        judge.className = 'value warn';
+        judge.textContent =
+          `⚠️ あと ${neededToday.toFixed(1)} pt`;
+
+        judge.className = 'status-value warn';
       }
 
-      document.getElementById('averagePerDay').textContent = `${averagePerDay.toFixed(1)} pt`;
-      document.getElementById('predictedTotal').textContent = `${Math.round(predictedMonthTotal).toLocaleString()} pt`;
-      document.getElementById('achievementDate').textContent = achievementDate;
-      document.getElementById('requiredPerDay').textContent = `${requiredPerDayRemaining.toFixed(1)} pt`;
+      document.getElementById('averagePerDay').textContent =
+        `${averagePerDay.toFixed(1)} pt`;
+
+      document.getElementById('predictedTotal').textContent =
+        `${Math.round(predictedMonthTotal).toLocaleString()} pt`;
+
+      document.getElementById('achievementDate').textContent =
+        achievementDate;
+
+      document.getElementById('requiredPerDay').textContent =
+        `${requiredPerDayRemaining.toFixed(1)} pt`;
+
+      const idealPercent =
+        Math.min((requiredByToday / monthlyTarget) * 100, 100);
+
+      document.getElementById('idealMarker').style.left =
+        `${idealPercent}%`;
     }
 
     loadSettings();
     calculate();
   </script>
+
 </body>
 </html>
