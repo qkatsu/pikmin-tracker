@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pikmin ポイント管理</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg: #eef4ff;
+      --card: rgba(255,255,255,0.82);
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: rgba(255,255,255,0.4);
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 18px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, #c7dfff, transparent 35%),
+        radial-gradient(circle at bottom right, #d7ffe8, transparent 35%),
+        linear-gradient(180deg, #edf4ff 0%, #f7fbff 100%);
+      color: var(--text);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      padding: 28px 24px;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #5fa8ff, #6ee7b7);
+      color: white;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      top: -70px;
+      right: -50px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero p {
+      margin-top: 8px;
+      opacity: 0.92;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 28px;
+      padding: 22px;
+      margin-bottom: 18px;
+      border: 1px solid var(--line);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--muted);
+    }
+
+    input {
+      width: 100%;
+      border: none;
+      border-radius: 18px;
+      padding: 16px;
+      font-size: 18px;
+      background: rgba(255,255,255,0.9);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    input:focus {
+      outline: 3px solid rgba(59,130,246,0.25);
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 22px;
+      padding: 18px;
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: 800;
+      color: white;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 0 10px 24px rgba(59,130,246,0.35);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .points {
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    .points .label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .points .value {
+      font-size: 42px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+
+    .progress-wrap {
+      height: 28px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.08);
+      overflow: hidden;
+      margin-top: 18px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      transition: width 0.4s ease;
+    }
+
+    .progress-text {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 800;
+      margin-top: 12px;
+    }
+
+    .status-card {
+      border-radius: 22px;
+      padding: 18px;
+      margin-top: 18px;
+      background: rgba(255,255,255,0.72);
+    }
+
+    .status-title {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .status-value {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    .good {
+      color: var(--green);
+    }
+
+    .warn {
+      color: var(--red);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .mini-card {
+      background: rgba(255,255,255,0.7);
+      border-radius: 22px;
+      padding: 16px;
+    }
+
+    .mini-label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .mini-value {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 14px;
+      }
+
+      .hero {
+        padding: 24px 20px;
+      }
+
+      .hero h1 {
+        font-size: 28px;
+      }
+
+      .card {
+        padding: 18px;
+        border-radius: 24px;
+      }
+
+      .points .value {
+        font-size: 36px;
+      }
+
+      .mini-value {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <h1>📊 Pikmin ポイント管理</h1>
+      <p id="monthLabel"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">入力</div>
+
+      <div class="input-group">
+        <label>今月の目標ポイント</label>
+        <input id="monthlyTarget" type="number" value="12200" />
+      </div>
+
+      <div class="input-group">
+        <label>次の目標累計ポイント</label>
+        <input id="nextTarget" type="number" />
+      </div>
+
+      <div class="input-group">
+        <label>そこまであと何ポイント</label>
+        <input id="remainingToTarget" type="number" />
+      </div>
+
+      <button onclick="calculate()">計算する</button>
+    </div>
+
+    <div class="card">
+      <div class="points">
+        <div class="label">現在ポイント</div>
+        <div class="value" id="currentPoints">0 pt</div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="progress-text" id="progressText">0%</div>
+
+      <div class="status-card">
+        <div class="status-title">今日の判定</div>
+        <div class="status-value" id="todayJudge">-</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="mini-card">
+          <div class="mini-label">今日まで理想</div>
+          <div class="mini-value" id="requiredByToday">0</div>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-label">平均ペース</div>
+          <div class="mini-value" id="averagePerDay">0</div>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-label">月末予測</div>
+          <div class="mini-value" id="predictedTotal">0</div>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-label">残り1日必要</div>
+          <div class="mini-value" id="requiredPerDay">0</div>
+        </div>
+      </div>
+
+      <div class="status-card">
+        <div class="status-title">達成予測日</div>
+        <div class="status-value" id="achievementDate">-</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+
+    const monthKey = `${year}-${month}`;
+    const storageKey = 'pikmin_month_data';
+
+    document.getElementById('monthLabel').textContent = `${year}年${month}月`;
+
+    function daysInMonth(year, month) {
+      return new Date(year, month, 0).getDate();
+    }
+
+    function loadSettings() {
+      const raw = localStorage.getItem(storageKey);
+
+      if (!raw) return;
+
+      try {
+        const data = JSON.parse(raw);
+
+        if (data.month === monthKey) {
+          document.getElementById('monthlyTarget').value = data.target;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function saveSettings(target) {
+      const data = {
+        month: monthKey,
+        target: target
+      };
+
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    }
+
+    function calculate() {
+      const monthlyTarget = parseInt(document.getElementById('monthlyTarget').value || 0);
+      const nextTarget = parseInt(document.getElementById('nextTarget').value || 0);
+      const remainingToTarget = parseInt(document.getElementById('remainingToTarget').value || 0);
+
+      saveSettings(monthlyTarget);
+
+      const currentPoints = nextTarget - remainingToTarget;
+
+      const totalDays = daysInMonth(year, month);
+      const remainingDays = totalDays - day;
+
+      const dailyTarget = monthlyTarget / totalDays;
+      const requiredByToday = dailyTarget * day;
+
+      const neededToday = Math.max(0, requiredByToday - currentPoints);
+
+      const averagePerDay = currentPoints / day;
+      const predictedMonthTotal = averagePerDay * totalDays;
+
+      const remainingPoints = monthlyTarget - currentPoints;
+
+      let requiredPerDayRemaining = 0;
+
+      if (remainingDays > 0) {
+        requiredPerDayRemaining = Math.max(0, remainingPoints / remainingDays);
+      }
+
+      let achievementDate = 'データ不足';
+
+      if (currentPoints >= monthlyTarget) {
+        achievementDate = '🎉 達成済み';
+      } else if (averagePerDay > 0) {
+        const daysToGoal = Math.ceil(remainingPoints / averagePerDay);
+
+        const future = new Date(today);
+        future.setDate(today.getDate() + daysToGoal);
+
+        achievementDate = `${future.getMonth() + 1}月${future.getDate()}日（あと${daysToGoal}日）`;
+      }
+
+      const progress = Math.min(currentPoints / monthlyTarget, 1);
+      const percent = (progress * 100).toFixed(1);
+
+      document.getElementById('currentPoints').textContent = `${currentPoints.toLocaleString()} pt`;
+      document.getElementById('progressBar').style.width = `${percent}%`;
+      document.getElementById('progressText').textContent = `${percent}%`;
+
+      document.getElementById('requiredByToday').textContent = `${requiredByToday.toFixed(1)} pt`;
+
+      const judge = document.getElementById('todayJudge');
+
+      if (neededToday <= 0) {
+        judge.textContent = '✅ 達成';
+        judge.className = 'value good';
+      } else {
+        judge.textContent = `⚠️ あと ${neededToday.toFixed(1)} pt`;
+        judge.className = 'value warn';
+      }
+
+      document.getElementById('averagePerDay').textContent = `${averagePerDay.toFixed(1)} pt`;
+      document.getElementById('predictedTotal').textContent = `${Math.round(predictedMonthTotal).toLocaleString()} pt`;
+      document.getElementById('achievementDate').textContent = achievementDate;
+      document.getElementById('requiredPerDay').textContent = `${requiredPerDayRemaining.toFixed(1)} pt`;
+    }
+
+    loadSettings();
+    calculate();
+  </script>
+</body>
+</html>
